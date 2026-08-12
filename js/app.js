@@ -352,6 +352,63 @@ setInterval(() => {
     if (Math.random() < corruption / 250) scrambleLastLine();
 }, 2500);
 
+/* ---------- ROLLING SCANLINE ---------- */
+function triggerRoll() {
+    const roll = document.getElementById('roll');
+    roll.classList.remove('active');
+    void roll.offsetWidth;
+    roll.classList.add('active');
+}
+
+(function scheduleRoll() {
+    setTimeout(() => {
+        triggerRoll();
+        scheduleRoll();
+    }, rand(4000, 7000));
+})();
+
+/* ---------- CRT BARREL WARP ---------- */
+const WARP_STRENGTH = 0.35;   // 0.2 subtle ... 0.6 very curved
+
+function buildWarpMap() {
+    const w = 256, h = 256;
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    const img = ctx.createImageData(w, h);
+    const d = img.data;
+
+    for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+            const nx = (x / (w - 1)) * 2 - 1;
+            const ny = (y / (h - 1)) * 2 - 1;
+            const r2 = nx * nx + ny * ny;
+
+            // sampling pulled toward center, stronger at edges = barrel bulge
+            const dx = -nx * r2 * WARP_STRENGTH * 0.5;
+            const dy = -ny * r2 * WARP_STRENGTH * 0.5;
+
+            const i = (y * w + x) * 4;
+            d[i] = Math.max(0, Math.min(255, 128 + dx * 255));
+            d[i + 1] = Math.max(0, Math.min(255, 128 + dy * 255));
+            d[i + 2] = 255;
+            d[i + 3] = 255;
+        }
+    }
+
+    ctx.putImageData(img, 0, 0);
+    return canvas.toDataURL();
+}
+
+function applyWarp() {
+    const map = document.getElementById('warp-map');
+    const url = buildWarpMap();
+    map.setAttribute('href', url);
+}
+
+applyWarp();
+
 /* ---------- PHASES ---------- */
 const PHASE_MIX = {
     IGNITION: { boot: 0.45, hex: 0.25, prayer: 0.15, warn: 0.10 },

@@ -3,10 +3,7 @@ body {
     margin: 0;
     height: 100%;
     overflow: hidden;
-    background: radial-gradient(circle at 50% 15%,
-            #0a2818 0%,
-            #04100a 45%,
-            #010402 100%);
+    background: #000;
 }
 
 body {
@@ -15,14 +12,26 @@ body {
     color: #7dff9b;
 }
 
+#tube {
+    position: fixed;
+    inset: 10px;
+    filter: url(#crt-wrap);
+}
+
 #screen {
-    position: relative;
-    height: 100vh;
-    padding: 16px 24px;
-    box-sizing: border-box;
+    position: absolute;
+    inset: 0;
+    border-radius: 28px;
     overflow: hidden;
+    background: #030b06;
     display: flex;
     flex-direction: column;
+    padding: 18px 28px;
+    box-sizing: border-box;
+    box-shadow: 
+        inset 0 0 90px 25px rgba(0, 0, 0, .55),
+        inset  0 0 10px 2px rgba(0, 0, 0, .8);
+  
 }
 
 #output {
@@ -75,7 +84,7 @@ body {
     color: rgba(125, 255, 155, 0.55);
 }
 
-.prayer {
+.prayer, .spirit {
     color: #a9f7bb;
     text-shadow: 0 0 12px rgba(184, 255, 204, 0.25);
 }
@@ -127,14 +136,15 @@ body {
 
 .flicker {
     pointer-events: none;
-    position: fixed;
+    position: absolute;
     inset: 0;
+    z-index: 9;
     background: rgba(125, 255, 155, 0.05);
     animation: flicker 1.8s infinite;
 }
 
 #emblem {
-    position: fixed;
+    position: absolute;
     inset: 0;
     margin: auto;
     width: 320px;
@@ -144,7 +154,14 @@ body {
     opacity: 0;
     transition: opacity 0.45s ease;
     pointer-events: none;
-    z-index: 5;
+    z-index: 1;
+}
+
+.overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 6;
+    pointer-events: none;
 }
 
 #emblem.on {
@@ -153,45 +170,65 @@ body {
 
 }
 
-.spirit {
-    color: #ffb000;
-    text-shadow: 0 0 14px #ffa000;
-    text-transform: uppercase;
+/* VIGNETTE */
+.vignette {
+    position: absolute;
+    inset: 0;
+    z-index: 7;
+    pointer-events: none;
+    background: 
+        radial-gradient(
+            ellipse at center,
+            transparent 55%,
+            rgba(0,0,0,.28) 82%,
+            rgba(0,0,0,.62) 100%
+        ),
+        linear-gradient(135deg,
+        rgba(255, 255, 255, 0.04) 0%,
+        transparent 35%);
+}
+
+/* SCANLINE ROLL */
+.roll {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 90px;
+    z-index: 8;
+    pointer-events: none;
+    transform: translateY(105vh);
+    background:  linear-gradient(
+        to bottom,
+        rgba(0, 0,0,0) 0%,
+        rgba(0,0,0,.3) 45%,
+        rgba(0,0,0,.3) 55%,
+        rgba(0,0,0,0) 100%
+    );
+}
+
+.roll.active {
+    animation: rollUp .85s linear 1;
+}
+
+@keyframes rollUp {
+    from {transform: translateY(105vh);}
+    to {transform: translateY(-140px);}
 }
 
 
 /* GLITCH */
 
 @keyframes screenGlitch {
-    0% {
-        transform: translate(0, 0);
-        filter: none;
-    }
-
-    20% {
-        transform: translate(-3px, 2px);
-        filter: invert(0.85);
-    }
-
-    40% {
-        transform: translate(3px, -2px) skewX(1deg);
-        filter: none;
-    }
-
-    60% {
-        transform: translate(-2px, -1px);
-        filter: invert(0.6) hue-rotate(70deg);
-    }
-
-    100% {
-        transform: translate(0, 0);
-        filter: none;
-    }
-
+  0%   { transform: translate(0, 0);                        filter: none; }
+  20%  { transform: translate(-2px, 1px);                   filter: brightness(1.35) saturate(1.3); }
+  40%  { transform: translate(2px, -1px) skewX(0.6deg);     filter: none; }
+  60%  { transform: translate(-1px, -1px);                  filter: brightness(0.85); }
+  100% { transform: translate(0, 0);                        filter: none; }
 }
 
 #screen.glitching {
-    animation: screenGlitch 0.18s steps(2, end) 1;
+  animation: screenGlitch 0.15s steps(2, end) 1;
 }
 
 .glitchline {
