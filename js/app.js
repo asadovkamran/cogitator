@@ -108,24 +108,26 @@ async function typeLine(text, cls = '', speed = 28) {
     const line = document.createElement('div');
     line.className = 'line ' + cls;
     output.insertBefore(line, caret);
+    lastLine = line;
 
     caret.classList.add('typing');
 
     const baseRate = cls === 'warn' ? 0.65 : 1;
-    let charIndex = 0;
 
     for (const ch of text) {
-        charIndex++;
-        line.textContent += ch;
+        let shown = ch;
+        if (ch !== ' ' && Math.random() < corruption / 1200) {
+            shown = randGlitchChar();
+        }
+
+        line.textContent += shown;
         output.scrollTop = output.scrollHeight;
 
-        // play a tick for every character
         tick(0.04 + Math.random() * 0.02, baseRate * (0.9 + Math.random() * 0.2));
 
         await sleep(rand(speed - 10, speed + 18));
     }
 
-    // small end-of-line thunk
     tick(0.05, baseRate * 0.5);
 
     caret.classList.remove('typing');
@@ -159,59 +161,49 @@ function fillTokens(text) {
 }
 
 function nextEndlessLine() {
+    const mix = PHASE_MIX[phase] || PHASE_MIX.IGNITION;
+    const speedMul = PHASE_SPEED[phase] || 1;
     const roll = Math.random();
 
-    if (roll < 0.32) {
-        return {
-            text: fillTokens(randItem(bootLines)),
-            cls: 'boot',
-            speed: rand(18, 26)
-        };
+    let text, cls, speed;
+
+    if (roll < mix.boot) {
+        text = fillTokens(randItem(bootLines)); cls = 'boot'; speed = rand(18, 26);
+    } else if (roll < mix.boot + mix.hex) {
+        text = makeHexLine(); cls = 'hex'; speed = rand(8, 14);
+    } else if (roll < mix.boot + mix.hex + mix.prayer) {
+        text = fillTokens(randItem(prayerLines)); cls = 'prayer'; speed = rand(26, 36);
+    } else if (roll < mix.boot + mix.hex + mix.prayer + mix.warn) {
+        text = fillTokens(randItem(warnLines)); cls = 'warn'; speed = rand(24, 32);
+    } else {
+        text = fillTokens(randItem(responseLines)); cls = 'prayer'; speed = rand(24, 34);
     }
 
-    if (roll < 0.58) {
-        return {
-            text: makeHexLine(),
-            cls: 'hex',
-            speed: rand(8, 14)
-        };
-    }
-
-    if (roll < 0.78) {
-        return {
-            text: fillTokens(randItem(prayerLines)),
-            cls: 'prayer',
-            speed: rand(26, 36)
-        };
-    }
-
-    if (roll < 0.88) {
-        return {
-            text: fillTokens(randItem(warnLines)),
-            cls: 'warn',
-            speed: rand(24, 32)
-        };
-    }
-
-    return {
-        text: fillTokens(randItem(responseLines)),
-        cls: 'prayer',
-        speed: rand(24, 34)
-    };
+    return { text, cls, speed: Math.round(speed * speedMul) };
 }
 
 async function endlessMode() {
     while (true) {
         trimOutput();
 
-        if (Math.random() < SPIRIT_CHANCE) {
+        // phase shift
+        if (Date.now() > phaseUntil) {
+            shiftPhase();
+            triggerScreenGlitch();
+            await typeLine('PHASE SHIFT :: ' + phase + ' PROTOCOLS ENGAGED', 'boot', 20);
+        }
+
+        // spirit is easier to reach during LITANY, quieter during DIAGNOSTIC
+        const spiritChance = SPIRIT_CHANCE *
+            (phase === 'LITANY' ? 1.6 : phase === 'DIAGNOSTIC' ? 0.5 : 1);
+
+        if (Math.random() < spiritChance) {
             const spiritLines = await askMachineSpirit();
 
             if (spiritLines.length) {
                 for (const l of spiritLines) {
                     await typeLine(l, 'spirit', 26);
                 }
-
                 await sleep(rand(400, 1000));
                 continue;
             }
@@ -219,6 +211,12 @@ async function endlessMode() {
 
         const item = nextEndlessLine();
         await typeLine(item.text, item.cls, item.speed);
+
+        // corruption burst
+        if (corruption > 40 && Math.random() < 0.12) {
+            triggerScreenGlitch();
+            await typeLine(randItem(degradeLines), 'glitchline', 20);
+        }
 
         if (Math.random() < 0.12) {
             await sleep(rand(700, 1600));
@@ -236,15 +234,16 @@ let uptimeSec = 0;
 function updateStatus() {
     uptimeSec++;
 
-    corruption += rand(-2, 3);
-    if (Math.random() < 0.06) corruption += rand(5, 15);
+    corruption += rand(-4, 3);
+    if (phase === 'CORRUPTION') corruption += 1;
+    if (phase === 'LITANY') corruption -= 3;
+    if (Math.random() < 0.06) {
+        corruption += rand(5, 10);
+        triggerScreenGlitch();
+    }
     corruption = clamp(corruption, 1, 60);
 
     const signal = clamp(100 - corruption - rand(0, 6), 20, 100);
-
-    if (Math.random() < 0.04) {
-        phase = PHASES[Math.floor(Math.random() * PHASES.length)];
-    }
 
     function setText(id, text) {
         const el = document.getElementById(id);
@@ -307,6 +306,73 @@ async function askMachineSpirit() {
     } finally {
         clearTimeout(timeout);
     }
+}
+
+/* ---------- GLITCH/CORRUPTION EVENTS ---------- */
+const GLITCH_CHARS = '▓▒░█#%@&$01';
+
+let lastLine = null;
+
+function randGlitchChar() {
+    return GLITCH_CHARS[Math.floor(Math.random() * GLITCH_CHARS.length)];
+}
+
+function triggerScreenGlitch() {
+    const screen = document.getElementById('screen');
+    screen.classList.remove('glitching');
+    void screen.offsetWidth;
+    screen.classList.add('glitching');
+    setTimeout(() => screen.classList.remove('glitching'), 220)
+}
+
+function scrambleLastLine() {
+    if (!lastLine) return;
+
+    const original = lastLine.textContent;
+    let frames = 0;
+    const maxFrames = rand(3, 6);
+
+    const iv = setInterval(() => {
+        frames++;
+        let out = '';
+        for (const ch of original) {
+            out += (ch !== ' ' && Math.random() < 0.3) ? randGlitchChar() : ch;
+        }
+        lastLine.textContent = out;
+
+        if (frames >= maxFrames) {
+            clearInterval(iv);
+            if (Math.random() < 0.8) lastLine.textContent = original;
+        }
+    }, 40);
+}
+
+setInterval(() => {
+    if (Math.random() < corruption / 300) triggerScreenGlitch();
+    if (Math.random() < corruption / 250) scrambleLastLine();
+}, 2500);
+
+/* ---------- PHASES ---------- */
+const PHASE_MIX = {
+    IGNITION: { boot: 0.45, hex: 0.25, prayer: 0.15, warn: 0.10 },
+    LITANY: { boot: 0.15, hex: 0.10, prayer: 0.50, warn: 0.05 },
+    DIAGNOSTIC: { boot: 0.20, hex: 0.50, prayer: 0.10, warn: 0.10 },
+    CORRUPTION: { boot: 0.15, hex: 0.20, prayer: 0.10, warn: 0.40 }
+};
+
+const PHASE_SPEED = {
+    IGNITION: 0.9,
+    LITANY: 1.25,
+    DIAGNOSTIC: 0.7,
+    CORRUPTION: 1.0
+};
+
+let phaseUntil = Date.now() + rand(30000, 60000);
+
+function shiftPhase() {
+    const others = PHASES.filter(p => p !== phase);
+    phase = randItem(others);
+    phaseUntil = Date.now() + rand(30000, 60000);
 }
 
 /* ---------- BOOT / MAIN ---------- */

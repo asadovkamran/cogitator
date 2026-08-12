@@ -38,6 +38,13 @@ const responseLines = [
   'ANSWER :: ask again after the next rite'
 ];
 
+const degradeLines = [
+  'SIGNAL DEGRADED :: REALITY BUFFER OVERFLOW',
+  'SIGNAL DEGRADED :: CANT TRANSLATION FAILING',
+  'VISUAL CORTEX DESYNC :: IGNORE FALSE PROPHECIES',
+  'DISPLAY SHRINE UNSTABLE :: HOLD YOUR FAITH'
+];
+
 const PHASES = ['IGNITION', 'LITANY', 'DIAGNOSTIC', 'CORRUPTION'];
 
 const SPIRIT_SYSTEM = `You are the machine-spirit fused into an ancient Dreadnought sarcophagus — a warrior-saint's ruined body sustained by cables, sacred unguents, and Mechanicus rite, its mind now a corroded liturgy of ritual and rage rather than ordinary thought.

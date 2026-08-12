@@ -159,6 +159,48 @@ body {
     text-transform: uppercase;
 }
 
+
+/* GLITCH */
+
+@keyframes screenGlitch {
+    0% {
+        transform: translate(0, 0);
+        filter: none;
+    }
+
+    20% {
+        transform: translate(-3px, 2px);
+        filter: invert(0.85);
+    }
+
+    40% {
+        transform: translate(3px, -2px) skewX(1deg);
+        filter: none;
+    }
+
+    60% {
+        transform: translate(-2px, -1px);
+        filter: invert(0.6) hue-rotate(70deg);
+    }
+
+    100% {
+        transform: translate(0, 0);
+        filter: none;
+    }
+
+}
+
+#screen.glitching {
+    animation: screenGlitch 0.18s steps(2, end) 1;
+}
+
+.glitchline {
+    color: #ff4b3a;
+    text-shadow: 0 0 12px rgba(255, 60, 40, 0.5);
+    letter-spacing: 0.08em;
+
+}
+
 @keyframes blink {
 
     0%,
