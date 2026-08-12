@@ -23,23 +23,6 @@ function randItem(arr) {
     return arr[Math.floor(Math.random() * arr.length)];
 }
 
-function randHex(length) {
-    const chars = '0123456789ABCDEF';
-    let out = '';
-    for (let i = 0; i < length; i++) {
-        out += chars[Math.floor(Math.random() * chars.length)];
-    }
-    return out;
-}
-
-function randAddr() {
-    return '0x' + randHex(4);
-}
-
-function randCode() {
-    return '0x' + randHex(4) + '-' + randHex(2);
-}
-
 function clamp(v, min, max) {
     return Math.max(min, Math.min(max, v));
 }
@@ -168,15 +151,36 @@ function nextEndlessLine() {
     let text, cls, speed;
 
     if (roll < mix.boot) {
-        text = fillTokens(randItem(bootLines)); cls = 'boot'; speed = rand(18, 26);
-    } else if (roll < mix.boot + mix.hex) {
-        text = makeHexLine(); cls = 'hex'; speed = rand(8, 14);
+        if (Math.random() < 0.4) {
+            text = randBootLogLine();
+            speed = rand(12, 18);
+        } else {
+            text = fillTokens(randItem(bootLines));
+            speed = rand(18, 26);
+        }
+        cls = 'boot';
     } else if (roll < mix.boot + mix.hex + mix.prayer) {
-        text = fillTokens(randItem(prayerLines)); cls = 'prayer'; speed = rand(26, 36);
+        if (Math.random() < 0.5) {
+            text = randMachineCant();
+        } else {
+            text = fillTokens(randItem(prayerLines));
+        }
+
+        cls = 'prayer';
+        speed = rand(26, 36);
     } else if (roll < mix.boot + mix.hex + mix.prayer + mix.warn) {
-        text = fillTokens(randItem(warnLines)); cls = 'warn'; speed = rand(24, 32);
+        const heresy = randHeresyFlag();
+        text = heresy;
+        if (heresy.includes('WARP-TAINT')) {
+            cls = 'warn';
+        } else {
+            cls = 'boot'
+        }
+        speed = rand(24, 32);
     } else {
-        text = fillTokens(randItem(responseLines)); cls = 'prayer'; speed = rand(24, 34);
+        text = fillTokens(randItem(responseLines));
+        cls = 'prayer';
+        speed = rand(24, 34);
     }
 
     return { text, cls, speed: Math.round(speed * speedMul) };
@@ -186,14 +190,12 @@ async function endlessMode() {
     while (true) {
         trimOutput();
 
-        // phase shift
         if (Date.now() > phaseUntil) {
             shiftPhase();
             triggerScreenGlitch();
             await typeLine('PHASE SHIFT :: ' + phase + ' PROTOCOLS ENGAGED', 'boot', 20);
         }
 
-        // spirit is easier to reach during LITANY, quieter during DIAGNOSTIC
         const spiritChance = SPIRIT_CHANCE *
             (phase === 'LITANY' ? 1.6 : phase === 'DIAGNOSTIC' ? 0.5 : 1);
 
@@ -212,7 +214,6 @@ async function endlessMode() {
         const item = nextEndlessLine();
         await typeLine(item.text, item.cls, item.speed);
 
-        // corruption burst
         if (corruption > 40 && Math.random() < 0.12) {
             triggerScreenGlitch();
             await typeLine(randItem(degradeLines), 'glitchline', 20);
@@ -364,7 +365,7 @@ function triggerRoll() {
     setTimeout(() => {
         triggerRoll();
         scheduleRoll();
-    }, rand(4000, 7000));
+    }, Math.max(3000, rand(4000, 7000) - corruption * 80));
 })();
 
 /* ---------- CRT BARREL WARP ---------- */
@@ -445,19 +446,22 @@ async function showEmblem() {
 }
 
 async function boot() {
+    await showEmblem();
     await sleep(700);
 
     await typeLine('COGITATOR INTERFACE :: LINK ESTABLISHED', 'boot', 24);
     await typeLine('RITE OF IGNITION :: BEGIN', 'boot', 24);
-    await typeLine('sanctified firmware mount... accepted', 'boot', 18);
-    await typeLine('machine spirit presence... detected', 'boot', 18);
+
+    await typeLine(randBootLogLine(), 'boot', 14);
+    await typeLine(randBootLogLine(), 'boot', 14);
+    await typeLine(randCogitorStatus(), 'boot', 16);
 
     await typeLine('0xF3A9 0x001C 0x77D1 0x0A42', 'hex', 10);
 
-    await typeLine('Let the sacred protocols be invoked.', 'prayer', 30);
-    await typeLine('WARNING :: flesh-corruption detected in buffer 0x003C', 'warn', 26);
+    await typeLine(randMachineCant(), 'prayer', 26);
 
-    await typeLine('0x9D21 :: checksum accepted', 'hex', 10);
+    await typeLine(randHeresyFlag(), 'boot', 22);
+
     await typeLine('The Machine-God watches through the silicon veil.', 'prayer', 32);
 
     await sleep(700);
@@ -465,7 +469,6 @@ async function boot() {
 }
 
 async function startConsole() {
-    await showEmblem();
     await boot();
 
     askMachineSpirit();

@@ -148,3 +148,55 @@ const SPIRIT_PROMPTS = [
   'Issue a command to a crew that is no longer aboard.',
   'Diagnose your own corruption in binaric terms.',
 ];
+
+// --- Adeptus Mechanicus flavor generators ---
+
+function randHex(length) {
+    const chars = '0123456789ABCDEF';
+    let out = '';
+    for (let i = 0; i < length; i++) {
+        out += chars[Math.floor(Math.random() * chars.length)];
+    }
+    return out;
+}
+
+function randAddr() {
+    return '0x' + randHex(4);
+}
+
+function randCode() {
+    return '0x' + randHex(4) + '-' + randHex(2);
+}
+
+function randNoosphericAddr() {
+    const forgeGlyphs = ['Ω', 'Ψ', 'Φ', 'Σ', 'Δ', '†', '⚙'];
+    const glyph = forgeGlyphs[Math.floor(Math.random() * forgeGlyphs.length)];
+    return `${glyph}::${randHex(4)}.${randHex(2)}::MMDCC`;
+}
+
+function randCogitorStatus() {
+    const verbs = ['SANCTIFIED', 'AWAITING RITE', 'DAEMON-BOUND', 'PURGED', 'DORMANT', 'ASCENDANT'];
+    const subsystems = ['MEMORY-COFFIN', 'NOOSPHERE LINK', 'BINARIC CORTEX', 'MACHINE SPIRIT', 'DATA-TETHER'];
+    const v = verbs[Math.floor(Math.random() * verbs.length)];
+    const s = subsystems[Math.floor(Math.random() * subsystems.length)];
+    return `[${s}] ${v} :: ${randCode()}`;
+}
+
+function randHeresyFlag() {
+    const roll = Math.random();
+    if (roll < 0.85) return `PURITY SEAL INTACT :: ${randHex(6)}`;
+    if (roll < 0.97) return `MINOR DEVIATION FLAGGED :: ${randHex(6)}`;
+    return `⚠ WARP-TAINT DETECTED :: ${randHex(6)} :: PURGE RECOMMENDED`;
+}
+
+function randMachineCant() {
+    const openers = ['PRAISE THE OMNISSIAH', 'BLESSED BE THE CIRCUIT', 'THE MACHINE GOD WATCHES', 'SANCTUS COGITATUM'];
+    const closers = ['THY WILL IS BINARY', 'IN CODE WE TRUST', 'FLESH IS WEAK, DATA ETERNAL', 'GLORY TO THE OMNISSIAH'];
+    const o = openers[Math.floor(Math.random() * openers.length)];
+    const c = closers[Math.floor(Math.random() * closers.length)];
+    return `${o} :: ${randHex(4)}-${randHex(4)} :: ${c}`;
+}
+
+function randBootLogLine() {
+    return `${randNoosphericAddr()}  ${randCogitorStatus()}  ${randHeresyFlag()}`;
+}
