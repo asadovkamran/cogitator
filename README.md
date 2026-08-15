@@ -12,4 +12,7 @@ In order to set it as a screensaver:
 
 Download and unpack .zip. Make sure that win-unpacked and vendor folders are side by side. Then run install.bat and thats it. Run uninstall.bat to remove the screensaver. By default it will be set to 10mins but you can change that from Windows screensaver GUI.
 
-<img width="800" height="600" alt="Screenshot 2026-08-12 223430" src="https://github.com/user-attachments/assets/38d8bf4d-0fe0-4016-af41-5e82c0d35296" />
+<img width="800" height="450" alt="ezgif-1c01b94c925c56a0" src="https://github.com/user-attachments/assets/9560c001-9166-403e-8e77-88ae363b9057" />
+
+
+
