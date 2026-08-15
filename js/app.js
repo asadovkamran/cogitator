@@ -1,8 +1,9 @@
 /* ---------- CONFIG ---------- */
 const MODEL_NAME = 'qwen2.5:0.5b';
-const OLLAMA_URL = 'http://127.0.0.1:11434/api/generate';
-const SPIRIT_CHANCE = 0.18;
-const SPIRIT_TIMEOUT_MS = 120000; // 2 mins for cold model loads
+const OLLAMA_URL = new URLSearchParams(window.location.search).get('spirit')
+  || 'http://127.0.0.1:11434/api/generate';
+const SPIRIT_CHANCE = 0.12;
+const SPIRIT_TIMEOUT_MS = 30000;
 
 /* ---------- HELPERS ---------- */
 function sleep(ms) {
@@ -72,8 +73,6 @@ window.addEventListener('pointerdown', unlockAudio, { once: true });
 window.addEventListener('keydown', unlockAudio, { once: true });
 
 /* ---------- TYPING / OUTPUT (WebGL) ---------- */
-// `view`, `beginLine`, `status` are from renderer.js
-// `crtPunch`, `crtRoll` are from crt.js
 
 async function typeLine(text, cls = '', speed = 28) {
   const line = beginLine(text, cls);
@@ -81,7 +80,6 @@ async function typeLine(text, cls = '', speed = 28) {
   const baseRate = cls === 'warn' ? 0.65 : 1;
 
   for (let i = 0; i < text.length; i++) {
-    // corruption mid-type
     if (text[i] !== ' ' && Math.random() < corruption / 1200) {
       line.text = line.text.slice(0, i) + randGlitchChar() + line.text.slice(i + 1);
     }
@@ -196,13 +194,13 @@ function nextEndlessLine() {
       speed = rand(18, 26);
     }
     cls = 'boot';
-  } 
+  }
   // HEX DATA
   else if (roll < mix.boot + mix.hex) {
     text = makeHexLine();
     cls = 'hex';
     speed = rand(8, 14);
-  } 
+  }
   // PRAYERS
   else if (roll < mix.boot + mix.hex + mix.prayer) {
     if (Math.random() < 0.5) {
@@ -212,7 +210,7 @@ function nextEndlessLine() {
     }
     cls = 'prayer';
     speed = rand(26, 36);
-  } 
+  }
   // WARNINGS
   else if (roll < mix.boot + mix.hex + mix.prayer + mix.warn) {
     const heresy = randHeresyFlag();
@@ -223,7 +221,7 @@ function nextEndlessLine() {
       cls = 'boot';
     }
     speed = rand(24, 32);
-  } 
+  }
   // RESPONSES
   else {
     text = fillTokens(randItem(responseLines));
@@ -239,8 +237,8 @@ let phase = 'IGNITION';
 let mode = 'BOOT';
 
 const PHASE_MIX = {
-  IGNITION:   { boot: 0.45, hex: 0.25, prayer: 0.15, warn: 0.10 },
-  LITANY:     { boot: 0.15, hex: 0.10, prayer: 0.50, warn: 0.05 },
+  IGNITION: { boot: 0.45, hex: 0.25, prayer: 0.15, warn: 0.10 },
+  LITANY: { boot: 0.15, hex: 0.10, prayer: 0.50, warn: 0.05 },
   DIAGNOSTIC: { boot: 0.20, hex: 0.50, prayer: 0.10, warn: 0.10 },
   CORRUPTION: { boot: 0.15, hex: 0.20, prayer: 0.10, warn: 0.40 }
 };
@@ -280,8 +278,8 @@ async function askMachineSpirit() {
         system: SPIRIT_SYSTEM,
         prompt: randItem(SPIRIT_PROMPTS),
         stream: false,
-        keep_alive: '10m',
-        options: { temperature: 0.9, num_predict: 40 }
+        keep_alive: -1,
+        options: { temperature: 0.5, num_ctx: 1024, num_predict: 42}
       })
     });
 
@@ -386,6 +384,22 @@ setInterval(() => {
     scheduleRoll();
   }, Math.max(3000, rand(7000, 15000) - corruption * 80));
 })();
+
+/* ---------- SCREENSAVER MODE ---------- */
+const saverParams = new URLSearchParams(window.location.search);
+
+if (saverParams.get('saver') === '1') {
+  let sx = null, sy = null;
+
+  window.addEventListener('mousemove', (e) => {
+    if (sx === null) { sx = e.screenX; sy = e.screenY; return; }
+    if (Math.abs(e.screenX - sx) + Math.abs(e.screenY - sy) > 25) window.close();
+  });
+
+  ['keydown', 'mousedown', 'wheel', 'touchstart'].forEach(ev => {
+    window.addEventListener(ev, () => window.close(), { once: true });
+  });
+}
 
 /* ---------- INIT ---------- */
 unlockAudio();

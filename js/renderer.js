@@ -1,4 +1,3 @@
-/* ---------- TERMINAL MODEL + 2D PAINTER ---------- */
 const view = {
   lines: [],
   typing: false,
@@ -76,7 +75,6 @@ function drawScene(w, h, now) {
   ctx.strokeStyle = 'rgba(125,255,155,0.18)';
   ctx.beginPath(); ctx.moveTo(PAD, BAR); ctx.lineTo(w - PAD, BAR); ctx.stroke();
 
-  // bottom bar
   ctx.fillText(
     'MODE :: ' + status.mode +
     '   SIGNAL :: ' + status.signal + '%' +
@@ -85,7 +83,6 @@ function drawScene(w, h, now) {
   );
   ctx.beginPath(); ctx.moveTo(PAD, h - BAR); ctx.lineTo(w - PAD, h - BAR); ctx.stroke();
 
-  // lines, anchored to the bottom
   const LINE_H = 28;
   ctx.font = '22px VT323, monospace';
   const lines = view.lines;
@@ -102,7 +99,6 @@ function drawScene(w, h, now) {
     ctx.shadowBlur = GLOW[L.cls] || 6;
     ctx.fillText(shownText, PAD, y - 22);
 
-    // caret on the last line
     if (i === lines.length - 1) {
       const on = view.typing || (now % 1000) < 500;
       if (on) {
